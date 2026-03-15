@@ -86,7 +86,7 @@ def report_disagreements(
     if len(references) != len(hypotheses):
         raise ValueError(
             f"Length mismatch: {len(references)} reference(s) vs "
-            f"{len(hypotheses)} hypothesis/hypotheses."
+            f"{len(hypotheses)} hypothesis(es)."
         )
     disagreements: list[tuple[int, EvalResult]] = []
     for idx, (ref, hyp) in enumerate(zip(references, hypotheses), start=1):
