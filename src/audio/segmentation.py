@@ -39,6 +39,18 @@ class AudioSegment:
 
 def _frame_rms(waveform: np.ndarray, frame_length: int, hop_length: int) -> np.ndarray:
     """Compute per-frame RMS energy."""
+    # Guard against empty or too-short waveforms and invalid parameters.
+    # For these cases, return an empty RMS array so callers can handle the
+    # absence of frames gracefully.
+    if (
+        waveform is None
+        or frame_length <= 0
+        or hop_length <= 0
+        or len(waveform) == 0
+        or len(waveform) < frame_length
+    ):
+        return np.empty(0, dtype=np.float32)
+
     n_frames = 1 + (len(waveform) - frame_length) // hop_length
     rms = np.empty(n_frames, dtype=np.float32)
     for i in range(n_frames):
