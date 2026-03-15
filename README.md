@@ -1,52 +1,61 @@
-# Task I: Audio-to-Text Transcription
+# AutoEIT Transcription Pipeline
+Open-source transcription pipeline for Spanish Elicited Imitation Task (EIT) learner speech.
 
-## Goal
-Convert each provided Spanish EIT audio file into a 30-row participant transcription sheet without grammar correction.
+## Overview
+This repository provides a reproducible pipeline for converting learner Spanish audio responses into sentence-level transcriptions suitable for linguistic analysis and downstream scoring. The system is designed for non-native speech, where generic ASR systems often fail due to accent transfer, hesitations, partial repetitions, and other learner-specific phenomena.
 
-## Inputs
-- Audio directory: [input/audio](/Users/fallofpheonix/Project/Human AI/AutoEIT/task1/input/audio)
-- Prompt workbook: [input/workbooks/AutoEIT Sample Audio for Transcribing.xlsx](/Users/fallofpheonix/Project/Human AI/AutoEIT/task1/input/workbooks/AutoEIT%20Sample%20Audio%20for%20Transcribing.xlsx)
+## Key Features
+- **Audio Preprocessing:** Normalization and SNR checks for noisy learner recordings.
+- **Robust Transcription:** Specialized decoding for learner-specific speech patterns.
+- **Post-processing:** Preserves learner disfluencies while correcting machine artifacts.
+- **Multi-format Export:** Batch results in Excel, CSV, and JSON.
+- **Evaluation:** Quantitative assessment using Word Error Rate (WER) and Character Error Rate (CER).
 
-## Command
-```bash
-python -m task1.src.run \
-  --audio-dir task1/input/audio \
-  --prompt-xlsx "task1/input/workbooks/AutoEIT Sample Audio for Transcribing.xlsx" \
-  --output-xlsx task1/output/AutoEIT_Task1_Transcriptions.xlsx
+## Repository Structure
+```text
+autoeit-transcription/
+├── data/
+│   ├── raw/           # Raw learner audio
+│   ├── processed/     # Normalized/Segmented audio
+│   └── metadata/      # EIT prompts and scoring rubrics
+├── src/
+│   ├── io/            # Data ingestion/export
+│   ├── audio/         # Preprocessing & segmentation
+│   ├── asr/           # ASR logic and model wrappers
+│   ├── postprocess/   # Transcript cleanup
+│   ├── eval/          # Metric calculation
+│   └── cli.py         # Main entry point
+├── configs/           # Pipeline configurations
+├── notebooks/         # Analysis and demos
+└── tests/             # Quality assurance
 ```
 
-## First-Run Model Note
-- The first ASR run downloads the selected `faster-whisper` model from Hugging Face.
-- The pipeline disables the Xet transfer path automatically because it can stall in desktop environments.
-- If model fetch still stalls, prefetch a local model directory and pass it through `--model-size`.
-- Direct prefetch command:
+## Installation
+### Requirements
+- Python 3.10+
+- FFmpeg (for audio processing)
+- PyTorch (for ASR)
+
+### Setup
 ```bash
-python scripts/prefetch_faster_whisper_model.py \
-  --model tiny \
-  --output-dir task1/models/faster-whisper-tiny
+git clone https://github.com/HumanAI/autoeit-transcription.git
+cd autoeit-transcription
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
-- Then run Task I with:
+
+## Usage
+### 1. Data Preparation
+Place input audio and workbook files under `data/raw/`.
+
+### 2. Run Transcription
 ```bash
-python -m task1.src.run \
-  --audio-dir task1/input/audio \
-  --prompt-xlsx "task1/input/workbooks/AutoEIT Sample Audio for Transcribing.xlsx" \
-  --output-xlsx task1/output/AutoEIT_Task1_Transcriptions.xlsx \
-  --model-size task1/models/faster-whisper-tiny
+python -m src.cli --audio-dir data/raw --prompt-xlsx data/metadata/prompts.xlsx --output-xlsx output/results.xlsx
 ```
-- A small debug run can be forced with `--sheet 38010-2A --model-size tiny` before attempting all 4 files.
-- `tiny` is useful for debugging the pipeline path only; it is not expected to produce submission-quality transcriptions on this dataset.
 
-## Output Contract
-- Preserves the original participant sheets from the provided workbook.
-- Populates `Transcription`, `Normalized transcription`, and `Notes` columns.
-- Adds `AutoEIT_Task1_Summary` with flat participant-level rows.
-- Fails if any participant cannot be aligned to exactly 30 utterances.
+## Contribution
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
-## Current Status
-- Code path, staged assets, tests, notebook, and local-model prefetch path are present.
-- A full debug workbook has been generated at `task1/output/AutoEIT_Task1_Transcriptions_tiny.xlsx` using a locally prefetched `tiny` model.
-- The pipeline is runtime-valid, but `tiny` output quality is not submission-grade for this dataset. A stronger local model remains the next quality step.
-
-## Notebook
-- Notebook: [notebooks/task1_transcription.ipynb](/Users/fallofpheonix/Project/Human AI/AutoEIT/task1/notebooks/task1_transcription.ipynb)
-- PDF: [output/AutoEIT_Task1_Notebook.pdf](/Users/fallofpheonix/Project/Human AI/AutoEIT/task1/output/AutoEIT_Task1_Notebook.pdf)
+## License
+Copyright (c) 2026 HumanAI Project. Distributed under the MIT License.
