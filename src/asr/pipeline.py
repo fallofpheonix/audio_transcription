@@ -13,19 +13,15 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from auto_eit_utils.io.workbooks import ensure_parent_dir, last_populated_header_column
-from auto_eit_utils.text.normalization import collapse_whitespace, normalize_transcription_text
+from src.io.workbooks import ensure_parent_dir, last_populated_header_column
+from src.postprocess.normalization import collapse_whitespace, normalize_transcription_text
+from src.postprocess.hallucination import cleanup_transcription as _cleanup_transcription
+from src.asr.model import build_whisper_transcriber as _build_whisper_transcriber
 
 EXPECTED_SENTENCE_COUNT = 30
 
 HEADER_FILL = PatternFill(fill_type="solid", fgColor="4472C4")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
-
-HALLUCINATION_PATTERNS = [
-    re.compile(r"^gracias por ver.*$", re.IGNORECASE),
-    re.compile(r"^subtitulado por.*$", re.IGNORECASE),
-    re.compile(r"^hasta la proxima.*$", re.IGNORECASE),
-]
 
 
 class AlignmentError(ValueError):
@@ -68,13 +64,12 @@ Transcriber = Callable[[Path], list[SegmentChunk]]
 
 
 def cleanup_transcription(text: str) -> str:
-    cleaned = collapse_whitespace(text or "")
-    if not cleaned:
-        return ""
-    for pattern in HALLUCINATION_PATTERNS:
-        if pattern.fullmatch(cleaned):
-            return ""
-    return cleaned
+    """Normalize and remove hallucinated transcription content.
+
+    This delegates to the shared postprocessing implementation to avoid
+    divergence of hallucination patterns and behavior.
+    """
+    return _cleanup_transcription(text)
 
 
 def build_whisper_transcriber(
@@ -84,39 +79,17 @@ def build_whisper_transcriber(
     compute_type: str,
     language: str,
 ) -> Transcriber:
-    # Hugging Face Xet downloads can stall in some desktop environments.
-    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
-    try:
-        from faster_whisper import WhisperModel
-    except ImportError as exc:
-        raise RuntimeError(
-            "faster-whisper is required for Task I transcription. "
-            "Install dependencies from requirements.txt."
-        ) from exc
+    """Build a Whisper-based transcriber using the shared ASR model helper.
 
-    model = WhisperModel(model_size, device=device, compute_type=compute_type)
-
-    def transcribe(audio_path: Path) -> list[SegmentChunk]:
-        segments, _ = model.transcribe(
-            str(audio_path),
-            language=language,
-            vad_filter=True,
-            beam_size=5,
-        )
-        rows: list[SegmentChunk] = []
-        for segment in segments:
-            text = cleanup_transcription(segment.text)
-            if text:
-                rows.append(
-                    SegmentChunk(
-                        start=float(segment.start),
-                        end=float(segment.end),
-                        text=text,
-                    )
-                )
-        return rows
-
-    return transcribe
+    Delegates to ``src.asr.model.build_whisper_transcriber`` to keep model
+    configuration and behavior consistent across the codebase.
+    """
+    return _build_whisper_transcriber(
+        model_size=model_size,
+        device=device,
+        compute_type=compute_type,
+        language=language,
+    )
 
 
 def parse_prompt_jobs(
