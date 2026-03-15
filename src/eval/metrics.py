@@ -18,10 +18,19 @@ class EvalResult:
     hypothesis: str
 
 
+def _normalize_text(text: str) -> str:
+    """Lower-case, strip, and collapse internal whitespace to single spaces."""
+    # Using .split() without arguments splits on all whitespace and collapses
+    # consecutive whitespace characters; joining with a single space yields a
+    # normalized, formatting-agnostic representation.
+    return " ".join(text.lower().split())
+
+
 def compute_wer(reference: str, hypothesis: str) -> float:
     """Return the Word Error Rate (WER) between *reference* and *hypothesis*.
 
-    Both strings are compared after lower-casing and whitespace normalization.
+    Both strings are compared after lower-casing and whitespace normalization
+    (collapsing all internal whitespace to single spaces).
     """
     try:
         from jiwer import wer as jiwer_wer
@@ -29,18 +38,22 @@ def compute_wer(reference: str, hypothesis: str) -> float:
         raise RuntimeError(
             "jiwer is required for WER computation.  Install it via: pip install jiwer"
         ) from exc
-    return float(jiwer_wer(reference.lower().strip(), hypothesis.lower().strip()))
+    return float(jiwer_wer(_normalize_text(reference), _normalize_text(hypothesis)))
 
 
 def compute_cer(reference: str, hypothesis: str) -> float:
-    """Return the Character Error Rate (CER) between *reference* and *hypothesis*."""
+    """Return the Character Error Rate (CER) between *reference* and *hypothesis*.
+
+    Both strings are compared after lower-casing and whitespace normalization
+    (collapsing all internal whitespace to single spaces).
+    """
     try:
         from jiwer import cer as jiwer_cer
     except ImportError as exc:
         raise RuntimeError(
             "jiwer is required for CER computation.  Install it via: pip install jiwer"
         ) from exc
-    return float(jiwer_cer(reference.lower().strip(), hypothesis.lower().strip()))
+    return float(jiwer_cer(_normalize_text(reference), _normalize_text(hypothesis)))
 
 
 def evaluate(reference: str, hypothesis: str) -> EvalResult:
