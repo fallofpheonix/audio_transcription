@@ -83,23 +83,41 @@ def align_to_prompts(
 
     # ── Split phase: too few segments ─────────────────────────────────────────
     while len(groups) < expected_count:
-        candidates = [
-            (idx, seg)
-            for idx, seg in enumerate(groups)
-            if len(seg.text.split()) >= MIN_TOKENS_FOR_SPLIT
-        ]
+        candidates = []
+        for idx, seg in enumerate(groups):
+            tokens = seg.text.split()
+            if len(tokens) < MIN_TOKENS_FOR_SPLIT:
+                continue
+            mid = len(tokens) // 2
+            left_text = cleanup_fn(" ".join(tokens[:mid]))
+            right_text = cleanup_fn(" ".join(tokens[mid:]))
+            # If either side becomes empty after cleanup, skip this segment as
+            # a split candidate but continue considering other segments.
+            if not left_text or not right_text:
+                continue
+            candidates.append(
+                (
+                    idx,
+                    seg,
+                    left_text,
+                    right_text,
+                    seg.end - seg.start,
+                    len(tokens),
+                )
+            )
         if not candidates:
             break
-        split_idx, seg = max(
+        (
+            split_idx,
+            seg,
+            left_text,
+            right_text,
+            _duration,
+            _token_count,
+        ) = max(
             candidates,
-            key=lambda item: (item[1].end - item[1].start, len(item[1].text.split())),
+            key=lambda item: (item[4], item[5]),
         )
-        tokens = seg.text.split()
-        mid = len(tokens) // 2
-        left_text = cleanup_fn(" ".join(tokens[:mid]))
-        right_text = cleanup_fn(" ".join(tokens[mid:]))
-        if not left_text or not right_text:
-            break
         midpoint_time = seg.start + (seg.end - seg.start) / 2.0
         groups[split_idx : split_idx + 1] = [
             Segment(start=seg.start, end=midpoint_time, text=left_text),
