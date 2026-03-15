@@ -48,7 +48,7 @@ def _frame_rms(waveform: np.ndarray, frame_length: int, hop_length: int) -> np.n
     return rms
 
 
-def detect_silence_gaps(
+def detect_voiced_regions(
     waveform: np.ndarray,
     sample_rate: int = TARGET_SAMPLE_RATE,
     *,
@@ -121,6 +121,33 @@ def detect_silence_gaps(
             segments.append((start_sec, end_sec))
 
     return segments
+
+
+def detect_silence_gaps(
+    waveform: np.ndarray,
+    sample_rate: int = TARGET_SAMPLE_RATE,
+    *,
+    frame_ms: float = 25.0,
+    hop_ms: float = 10.0,
+    silence_threshold_fraction: float = 0.05,
+    min_silence_ms: float = 300.0,
+    min_speech_ms: float = 200.0,
+) -> list[tuple[float, float]]:
+    """Deprecated alias for :func:`detect_voiced_regions`.
+
+    Despite the name, this function returns *voiced* (speech) regions,
+    not silence gaps. It is kept for backwards compatibility and simply
+    forwards all arguments to :func:`detect_voiced_regions`.
+    """
+    return detect_voiced_regions(
+        waveform=waveform,
+        sample_rate=sample_rate,
+        frame_ms=frame_ms,
+        hop_ms=hop_ms,
+        silence_threshold_fraction=silence_threshold_fraction,
+        min_silence_ms=min_silence_ms,
+        min_speech_ms=min_speech_ms,
+    )
 
 
 def segment_audio_file(
