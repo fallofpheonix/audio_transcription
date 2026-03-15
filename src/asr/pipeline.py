@@ -13,8 +13,8 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from auto_eit_utils.io.workbooks import ensure_parent_dir, last_populated_header_column
-from auto_eit_utils.text.normalization import collapse_whitespace, normalize_transcription_text
+from src.io.workbooks import ensure_parent_dir, last_populated_header_column
+from src.postprocess.normalization import collapse_whitespace, normalize_transcription_text
 
 EXPECTED_SENTENCE_COUNT = 30
 

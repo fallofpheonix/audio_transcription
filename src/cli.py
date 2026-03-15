@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from task1.src.pipeline import EXPECTED_SENTENCE_COUNT, run_batch
+from src.asr.pipeline import EXPECTED_SENTENCE_COUNT, run_batch
 
 
 def build_parser() -> argparse.ArgumentParser:
