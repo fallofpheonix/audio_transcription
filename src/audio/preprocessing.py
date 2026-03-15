@@ -31,13 +31,12 @@ def load_audio(path: str | Path, target_sr: int = TARGET_SAMPLE_RATE) -> np.ndar
     """
     import av  # bundled with faster-whisper
 
-    container = av.open(str(path))
-    resampler = av.AudioResampler(format="fltp", layout="mono", rate=target_sr)
-    frames: list[np.ndarray] = []
-    for frame in container.decode(audio=0):
-        for resampled in resampler.resample(frame):
-            frames.append(resampled.to_ndarray()[0])
-    container.close()
+    with av.open(str(path)) as container:
+        resampler = av.AudioResampler(format="fltp", layout="mono", rate=target_sr)
+        frames: list[np.ndarray] = []
+        for frame in container.decode(audio=0):
+            for resampled in resampler.resample(frame):
+                frames.append(resampled.to_ndarray()[0])
     if not frames:
         raise ValueError(f"No audio data decoded from {path!r}.")
     waveform = np.concatenate(frames, axis=0).astype(np.float32)
