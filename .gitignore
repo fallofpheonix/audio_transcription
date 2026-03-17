@@ -20,3 +20,6 @@ Thumbs.db
 .ruff_cache/
 htmlcov/
 .coverage
+*.xlsx
+output/
+submission/
