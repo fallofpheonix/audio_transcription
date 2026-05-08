@@ -65,5 +65,3 @@ models/**/*.bin
 *.a
 *.dylib
 *.exe
-bench/bench_*
-tests/test_*
